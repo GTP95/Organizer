@@ -1,8 +1,26 @@
-/*
+.weekly-calendar {
+	width: 100%;
+	border-collapse: collapse;
+	margin: 1em 0;
+}
 
-This CSS file will be included with your plugin, and
-available in the app when your plugin is enabled.
+.weekly-calendar th {
+	background-color: var(--background-secondary);
+	padding: 8px;
+	text-align: center;
+	border: 1px solid var(--background-modifier-border);
+}
 
-If your plugin does not need CSS, delete this file.
+.weekly-calendar .calendar-day {
+	height: 150px;
+	vertical-align: top;
+	padding: 8px;
+	border: 1px solid var(--background-modifier-border);
+}
 
-*/
+.calendar-day div {
+	margin: 2px 0;
+	padding: 3px;
+	background-color: var(--background-primary-alt);
+	border-radius: 3px;
+}
