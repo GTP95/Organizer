@@ -26,6 +26,8 @@ export default class WeeklyCalendarPlugin extends Plugin {
 	}
 
 	async renderCalendar(container: HTMLElement, notePath: string) {
+		// Clear existing content before re-rendering
+		container.empty(); // This is the crucial line that prevents duplicates
 		const data = await this.loadData();
 		const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
