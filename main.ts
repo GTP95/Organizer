@@ -30,7 +30,7 @@ class WeeklyCalendarView extends ItemView {
 		container.empty();
 
 		const data = await this.plugin.loadData();
-		const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+		const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 		const table = container.createEl('table', { cls: 'weekly-calendar' });
 		const headerRow = table.createEl('tr');
