@@ -1,96 +1,136 @@
-import { Plugin, TFile, MarkdownPostProcessorContext } from 'obsidian';
-import * as YAML from 'yaml';
+import { App, Plugin, WorkspaceLeaf, ItemView, TFile } from 'obsidian';
 
-const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+interface WeeklyCalendarData {
+	[day: string]: string[];
+}
+
+class WeeklyCalendarView extends ItemView {
+	static viewType = 'weekly-calendar';
+	plugin: WeeklyCalendarPlugin;
+
+	constructor(leaf: WorkspaceLeaf, plugin: WeeklyCalendarPlugin) {
+		super(leaf);
+		this.plugin = plugin;
+	}
+
+	getViewType() {
+		return WeeklyCalendarView.viewType;
+	}
+
+	getDisplayText() {
+		return 'Weekly Calendar';
+	}
+
+	async onOpen() {
+		await this.renderView();
+	}
+
+	async renderView() {
+		const container = this.containerEl.children[1];
+		container.empty();
+
+		const data = await this.plugin.loadData();
+		const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+		const table = container.createEl('table', { cls: 'weekly-calendar' });
+		const headerRow = table.createEl('tr');
+
+		// Create header row
+		days.forEach(day => {
+			headerRow.createEl('th', { text: day });
+		});
+
+		// Create content row
+		const contentRow = table.createEl('tr');
+		days.forEach(day => {
+			const td = contentRow.createEl('td');
+
+			// Todo list
+			const list = td.createEl('ul');
+			data[day].forEach(todo => {
+				const li = list.createEl('li');
+				li.createSpan({ text: todo });
+
+				// Delete button
+				const deleteBtn = li.createEl('button', { text: '×' });
+				deleteBtn.onClickEvent(async () => {
+					await this.plugin.removeTodo(day, todo);
+					await this.renderView();
+				});
+			});
+
+			// Input field
+			const input = td.createEl('input', { type: 'text', placeholder: 'Add todo' });
+			input.addEventListener('keypress', async (e) => {
+				if (e.key === 'Enter' && input.value.trim()) {
+					await this.plugin.addTodo(day, input.value.trim());
+					input.value = '';
+					await this.renderView();
+				}
+			});
+		});
+	}
+}
 
 export default class WeeklyCalendarPlugin extends Plugin {
+	dataPath: string;
+
 	async onload() {
-		this.registerMarkdownCodeBlockProcessor('weekly-calendar', this.processCalendarBlock.bind(this));
+		this.dataPath = `${this.app.vault.configDir}/plugins/weekly-calendar/data.json`;
+
+		this.registerView(WeeklyCalendarView.viewType, (leaf) => new WeeklyCalendarView(leaf, this));
+
+		this.addRibbonIcon('calendar', 'Weekly Calendar', () => {
+			this.activateView();
+		});
 	}
 
-	private async processCalendarBlock(
-		source: string,
-		el: HTMLElement,
-		ctx: MarkdownPostProcessorContext
-	) {
-		const file = this.app.vault.getAbstractFileByPath(ctx.sourcePath);
-		if (!(file instanceof TFile)) return;
-
-		const content = await this.app.vault.read(file);
-		let frontmatterData = this.parseFrontmatter(content);
-
-		const table = this.createCalendarTable(frontmatterData, file);
-		el.appendChild(table);
-	}
-
-	private parseFrontmatter(content: string): any {
-		const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---\n/);
-		if (!frontmatterMatch) return {};
-
-		try {
-			return YAML.parse(frontmatterMatch[1]) || {};
-		} catch (e) {
-			console.error('Error parsing frontmatter:', e);
-			return {};
+	async activateView() {
+		const leaves = this.app.workspace.getLeavesOfType(WeeklyCalendarView.viewType);
+		if (leaves.length === 0) {
+			await this.app.workspace.getRightLeaf(false).setViewState({
+				type: WeeklyCalendarView.viewType,
+				active: true,
+			});
 		}
 	}
 
-	private createCalendarTable(frontmatterData: any, file: TFile): HTMLTableElement {
-		const table = document.createElement('table');
-		table.addClass('weekly-calendar');
-
-		// Create header row
-		const headerRow = table.createTHead().insertRow();
-		DAYS_OF_WEEK.forEach(day => {
-			const th = document.createElement('th');
-			th.textContent = day;
-			headerRow.appendChild(th);
-		});
-
-		// Create body row
-		const bodyRow = table.insertRow();
-		DAYS_OF_WEEK.forEach(day => {
-			const td = document.createElement('td');
-			td.addClass('calendar-day');
-
-			// Display existing todos
-			const todos = frontmatterData.weeklyTodos?.[day] || [];
-			todos.forEach((todo: string) => {
-				const todoDiv = document.createElement('div');
-				todoDiv.textContent = `- ${todo}`;
-				td.appendChild(todoDiv);
-			});
-
-			// Add todo interaction
-			td.addEventListener('dblclick', async () => {
-				const newTodo = prompt('Enter new todo:');
-				if (newTodo) {
-					await this.updateTodoInFrontmatter(file, day, newTodo);
-				}
-			});
-
-			bodyRow.appendChild(td);
-		});
-
-		return table;
+	async loadData(): Promise<WeeklyCalendarData> {
+		try {
+			const content = await this.app.vault.adapter.read(this.dataPath);
+			return JSON.parse(content);
+		} catch (error) {
+			return this.getDefaultData();
+		}
 	}
 
-	private async updateTodoInFrontmatter(file: TFile, day: string, newTodo: string) {
-		await this.app.vault.process(file, (data) => {
-			const frontmatterMatch = data.match(/^---\n[\s\S]*?\n---\n/);
-			let frontmatter = this.parseFrontmatter(data);
-
-			// Update todos
-			if (!frontmatter.weeklyTodos) frontmatter.weeklyTodos = {};
-			if (!frontmatter.weeklyTodos[day]) frontmatter.weeklyTodos[day] = [];
-			frontmatter.weeklyTodos[day].push(newTodo);
-
-			const yaml = YAML.stringify(frontmatter);
-			return frontmatterMatch
-				? data.replace(frontmatterMatch[0], `---\n${yaml}---\n`)
-				: `---\n${yaml}---\n${data}`;
-		});
+	getDefaultData(): WeeklyCalendarData {
+		const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+		const data: WeeklyCalendarData = {};
+		days.forEach(day => data[day] = []);
+		return data;
 	}
 
-	onunload() {}
+	async saveData(data: WeeklyCalendarData) {
+		const dirPath = `${this.app.vault.configDir}/plugins/weekly-calendar`;
+		const filePath = `${dirPath}/data.json`;
+
+		if (!await this.app.vault.adapter.exists(dirPath)) {
+			await this.app.vault.adapter.mkdir(dirPath);
+		}
+
+		await this.app.vault.adapter.write(filePath, JSON.stringify(data, null, 2));
+	}
+
+	async addTodo(day: string, todo: string) {
+		const data = await this.loadData();
+		data[day].push(todo);
+		await this.saveData(data);
+	}
+
+	async removeTodo(day: string, todo: string) {
+		const data = await this.loadData();
+		data[day] = data[day].filter(item => item !== todo);
+		await this.saveData(data);
+	}
 }
