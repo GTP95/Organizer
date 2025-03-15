@@ -1,4 +1,4 @@
-import { App, Plugin, MarkdownPostProcessorContext, TFile } from 'obsidian';
+import { Plugin, MarkdownPostProcessorContext } from 'obsidian';
 
 interface WeeklyCalendarData {
 	[notePath: string]: {
@@ -50,7 +50,6 @@ export default class WeeklyCalendarPlugin extends Plugin {
 			if (data[notePath]?.[day]) {
 				data[notePath][day].forEach(todo => {
 					const li = list.createEl('li', { cls: 'calendar-item' });
-					li.createSpan({ text: todo });
 
 					// Delete button
 					const deleteBtn = li.createEl('button', { cls: 'calendar-delete', text: '✓' });
@@ -58,6 +57,8 @@ export default class WeeklyCalendarPlugin extends Plugin {
 						await this.removeTodo(notePath, day, todo);
 						this.renderCalendar(container, notePath);
 					});
+
+					li.createSpan({ text: todo });
 				});
 			}
 
