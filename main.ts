@@ -1,75 +1,9 @@
-import { App, Plugin, WorkspaceLeaf, ItemView, TFile } from 'obsidian';
+import { App, Plugin, MarkdownPostProcessorContext, TFile } from 'obsidian';
 
 interface WeeklyCalendarData {
-	[day: string]: string[];
-}
-
-class WeeklyCalendarView extends ItemView {
-	static viewType = 'weekly-calendar';
-	plugin: WeeklyCalendarPlugin;
-
-	constructor(leaf: WorkspaceLeaf, plugin: WeeklyCalendarPlugin) {
-		super(leaf);
-		this.plugin = plugin;
-	}
-
-	getViewType() {
-		return WeeklyCalendarView.viewType;
-	}
-
-	getDisplayText() {
-		return 'Weekly Calendar';
-	}
-
-	async onOpen() {
-		await this.renderView();
-	}
-
-	async renderView() {
-		const container = this.containerEl.children[1];
-		container.empty();
-
-		const data = await this.plugin.loadData();
-		const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-
-		const table = container.createEl('table', { cls: 'weekly-calendar' });
-		const headerRow = table.createEl('tr');
-
-		// Create header row
-		days.forEach(day => {
-			headerRow.createEl('th', { text: day });
-		});
-
-		// Create content row
-		const contentRow = table.createEl('tr');
-		days.forEach(day => {
-			const td = contentRow.createEl('td');
-
-			// Todo list
-			const list = td.createEl('ul');
-			data[day].forEach(todo => {
-				const li = list.createEl('li');
-				li.createSpan({ text: todo });
-
-				// Delete button
-				const deleteBtn = li.createEl('button', { text: '×' });
-				deleteBtn.onClickEvent(async () => {
-					await this.plugin.removeTodo(day, todo);
-					await this.renderView();
-				});
-			});
-
-			// Input field
-			const input = td.createEl('input', { type: 'text', placeholder: 'Add todo' });
-			input.addEventListener('keypress', async (e) => {
-				if (e.key === 'Enter' && input.value.trim()) {
-					await this.plugin.addTodo(day, input.value.trim());
-					input.value = '';
-					await this.renderView();
-				}
-			});
-		});
-	}
+	[notePath: string]: {
+		[day: string]: string[];
+	};
 }
 
 export default class WeeklyCalendarPlugin extends Plugin {
@@ -78,21 +12,67 @@ export default class WeeklyCalendarPlugin extends Plugin {
 	async onload() {
 		this.dataPath = `${this.app.vault.configDir}/plugins/weekly-calendar/data.json`;
 
-		this.registerView(WeeklyCalendarView.viewType, (leaf) => new WeeklyCalendarView(leaf, this));
+		this.registerMarkdownCodeBlockProcessor('weekly-calendar', (source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext) => {
+			this.renderCalendar(el, ctx.sourcePath);
+		});
 
-		this.addRibbonIcon('calendar', 'Weekly Calendar', () => {
-			this.activateView();
+		this.addCommand({
+			id: 'insert-weekly-calendar',
+			name: 'Insert Weekly Calendar',
+			editorCallback: (editor) => {
+				editor.replaceSelection('```weekly-calendar\n```');
+			}
 		});
 	}
 
-	async activateView() {
-		const leaves = this.app.workspace.getLeavesOfType(WeeklyCalendarView.viewType);
-		if (leaves.length === 0) {
-			await this.app.workspace.getRightLeaf(false).setViewState({
-				type: WeeklyCalendarView.viewType,
-				active: true,
+	async renderCalendar(container: HTMLElement, notePath: string) {
+		const data = await this.loadData();
+		const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+		const wrapper = container.createDiv({ cls: 'weekly-calendar-wrapper' });
+		const table = wrapper.createEl('table');
+		const headerRow = table.createEl('tr');
+
+		// Create header row
+		days.forEach(day => {
+			headerRow.createEl('th', { text: day.substring(0, 3) });
+		});
+
+		// Create content row
+		const contentRow = table.createEl('tr');
+		days.forEach(day => {
+			const td = contentRow.createEl('td', { cls: 'calendar-day' });
+
+			// Todo list
+			const list = td.createEl('ul');
+			if (data[notePath]?.[day]) {
+				data[notePath][day].forEach(todo => {
+					const li = list.createEl('li', { cls: 'calendar-item' });
+					li.createSpan({ text: todo });
+
+					// Delete button
+					const deleteBtn = li.createEl('button', { cls: 'calendar-delete', text: '×' });
+					deleteBtn.onClickEvent(async () => {
+						await this.removeTodo(notePath, day, todo);
+						this.renderCalendar(container, notePath);
+					});
+				});
+			}
+
+			// Input field
+			const input = td.createEl('input', {
+				type: 'text',
+				cls: 'calendar-input',
+				placeholder: 'Add task'
 			});
-		}
+
+			input.addEventListener('keypress', async (e) => {
+				if (e.key === 'Enter' && input.value.trim()) {
+					await this.addTodo(notePath, day, input.value.trim());
+					this.renderCalendar(container, notePath);
+				}
+			});
+		});
 	}
 
 	async loadData(): Promise<WeeklyCalendarData> {
@@ -100,15 +80,8 @@ export default class WeeklyCalendarPlugin extends Plugin {
 			const content = await this.app.vault.adapter.read(this.dataPath);
 			return JSON.parse(content);
 		} catch (error) {
-			return this.getDefaultData();
+			return {};
 		}
-	}
-
-	getDefaultData(): WeeklyCalendarData {
-		const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-		const data: WeeklyCalendarData = {};
-		days.forEach(day => data[day] = []);
-		return data;
 	}
 
 	async saveData(data: WeeklyCalendarData) {
@@ -122,15 +95,19 @@ export default class WeeklyCalendarPlugin extends Plugin {
 		await this.app.vault.adapter.write(filePath, JSON.stringify(data, null, 2));
 	}
 
-	async addTodo(day: string, todo: string) {
+	async addTodo(notePath: string, day: string, todo: string) {
 		const data = await this.loadData();
-		data[day].push(todo);
+		if (!data[notePath]) data[notePath] = {};
+		if (!data[notePath][day]) data[notePath][day] = [];
+		data[notePath][day].push(todo);
 		await this.saveData(data);
 	}
 
-	async removeTodo(day: string, todo: string) {
+	async removeTodo(notePath: string, day: string, todo: string) {
 		const data = await this.loadData();
-		data[day] = data[day].filter(item => item !== todo);
-		await this.saveData(data);
+		if (data[notePath]?.[day]) {
+			data[notePath][day] = data[notePath][day].filter(item => item !== todo);
+			await this.saveData(data);
+		}
 	}
 }

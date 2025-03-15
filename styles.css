@@ -1,27 +1,30 @@
-.weekly-calendar {
+.weekly-calendar-wrapper table {
 	width: 100%;
 	border-collapse: collapse;
 }
 
-.weekly-calendar th, .weekly-calendar td {
-	border: 1px solid var(--background-modifier-border);
-	padding: 8px;
+.calendar-day {
 	vertical-align: top;
-	min-width: 120px;
+	padding: 10px;
+	border: 1px solid var(--background-modifier-border);
 }
 
-.weekly-calendar th {
-	background-color: var(--background-primary-alt);
-}
-
-.todo-add {
-	margin-top: 8px;
+.calendar-input {
 	width: 100%;
+	margin-top: 5px;
 }
 
-.todo-delete {
+.calendar-delete {
 	float: right;
-	padding: 0 4px;
-	margin-left: 4px;
 	cursor: pointer;
+	background: none;
+	border: none;
+	color: var(--text-error);
+}
+
+.calendar-item {
+	list-style: none;
+	margin: 3px 0;
+	padding: 5px;
+	background-color: var(--background-secondary);
 }
