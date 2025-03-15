@@ -27,9 +27,9 @@ export default class WeeklyCalendarPlugin extends Plugin {
 
 	async renderCalendar(container: HTMLElement, notePath: string) {
 		// Clear existing content before re-rendering
-		container.empty(); // This is the crucial line that prevents duplicates
+		container.empty(); // This is the crucial line that prevents duplicate tables
 		const data = await this.loadData();
-		const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+		const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 		const wrapper = container.createDiv({ cls: 'weekly-calendar-wrapper' });
 		const table = wrapper.createEl('table');
@@ -53,7 +53,7 @@ export default class WeeklyCalendarPlugin extends Plugin {
 					li.createSpan({ text: todo });
 
 					// Delete button
-					const deleteBtn = li.createEl('button', { cls: 'calendar-delete', text: '×' });
+					const deleteBtn = li.createEl('button', { cls: 'calendar-delete', text: '✓' });
 					deleteBtn.onClickEvent(async () => {
 						await this.removeTodo(notePath, day, todo);
 						this.renderCalendar(container, notePath);
