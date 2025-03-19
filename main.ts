@@ -9,9 +9,11 @@ interface WeeklyCalendarData {
 
 interface ExamplePluginSettings {
 	dateFormat: string;
+	startOfWeek: 'Monday' | 'Sunday';
 }
 const DEFAULT_SETTINGS: Partial<ExamplePluginSettings> = {
 	dateFormat: 'YYYY-MM-DD',
+	startOfWeek: 'Monday',
 };
 
 export default class WeeklyCalendarPlugin extends Plugin {
