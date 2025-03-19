@@ -43,7 +43,10 @@ export default class WeeklyCalendarPlugin extends Plugin {
 		// Clear existing content before re-rendering
 		container.empty(); // This is the crucial line that prevents duplicate tables
 		const data = await this.loadData();
-		const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+		const startOfWeek = this.settings.startOfWeek;
+		const days = startOfWeek === 'Monday'
+			? ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+			: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 		const wrapper = container.createDiv({ cls: 'weekly-calendar-wrapper' });
 		const table = wrapper.createEl('table');
