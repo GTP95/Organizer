@@ -1,4 +1,5 @@
 import { Plugin, MarkdownPostProcessorContext } from 'obsidian';
+import {ExampleSettingTab} from "./SettingsTab";
 
 interface WeeklyCalendarData {
 	[notePath: string]: {
@@ -6,10 +7,19 @@ interface WeeklyCalendarData {
 	};
 }
 
+interface ExamplePluginSettings {
+	dateFormat: string;
+}
+const DEFAULT_SETTINGS: Partial<ExamplePluginSettings> = {
+	dateFormat: 'YYYY-MM-DD',
+};
+
 export default class WeeklyCalendarPlugin extends Plugin {
 	dataPath: string;
+	settings: ExamplePluginSettings;
 
 	async onload() {
+		await this.loadSettings();
 		this.dataPath = `${this.app.vault.configDir}/plugins/weekly-calendar/data.json`;
 
 		this.registerMarkdownCodeBlockProcessor('weekly-calendar', (source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext) => {
@@ -23,6 +33,8 @@ export default class WeeklyCalendarPlugin extends Plugin {
 				editor.replaceSelection('```weekly-calendar\n```');
 			}
 		});
+
+		this.addSettingTab(new ExampleSettingTab(this.app, this));
 	}
 
 	async renderCalendar(container: HTMLElement, notePath: string) {
@@ -113,4 +125,12 @@ export default class WeeklyCalendarPlugin extends Plugin {
 			await this.saveData(data);
 		}
 	}
+
+	async loadSettings() {
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+	}
+	async saveSettings() {
+		await this.saveData(this.settings);
+	}
+
 }
