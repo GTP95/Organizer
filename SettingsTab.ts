@@ -1,5 +1,5 @@
 import ExamplePlugin from './main';
-import { App, PluginSettingTab, Setting } from 'obsidian';
+import { App, PluginSettingTab, Setting, MarkdownView } from 'obsidian';
 
 export class ExampleSettingTab extends PluginSettingTab {
 	plugin: ExamplePlugin;
@@ -26,14 +26,11 @@ export class ExampleSettingTab extends PluginSettingTab {
 						this.plugin.settings.startOfWeek = value as 'Monday' | 'Sunday';
 						await this.plugin.saveSettings();
 						// Re-render the calendar
-						const activeLeaf = this.app.workspace.activeLeaf;
-						if (activeLeaf) {
-							const view = activeLeaf.view;
-							if (view.getViewType() === 'markdown') {
-								const container = view.containerEl.querySelector('.weekly-calendar-wrapper');
-								if (container) {
-									this.plugin.renderCalendar(container, view.file.path);
-								}
+						const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+						if (activeView) {
+							const container = activeView.containerEl.querySelector('.weekly-calendar-wrapper');
+							if (container) {
+								this.plugin.renderCalendar(container, activeView.file.path);
 							}
 						}
 					})
