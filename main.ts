@@ -8,21 +8,23 @@ interface WeeklyCalendarData {
 }
 
 interface ExamplePluginSettings {
-	dateFormat: string;
 	startOfWeek: 'Monday' | 'Sunday';
 }
-const DEFAULT_SETTINGS: Partial<ExamplePluginSettings> = {
-	dateFormat: 'YYYY-MM-DD',
-	startOfWeek: 'Monday',
+const DEFAULT_SETTINGS: ExamplePluginSettings = {
+	startOfWeek: 'Monday'
 };
 
 export default class WeeklyCalendarPlugin extends Plugin {
+	pluginDirPath: string;
 	dataPath: string;
+	settingsPath: string;
 	settings: ExamplePluginSettings;
 
 	async onload() {
 		await this.loadSettings();
-		this.dataPath = `${this.app.vault.configDir}/plugins/weekly-calendar/data.json`;
+		this.pluginDirPath=`${this.app.vault.configDir}/plugins/weekly-calendar`;
+		this.dataPath = `${this.pluginDirPath}/data.json`;
+		this.settingsPath = `${this.pluginDirPath}/settings.json`;
 
 		this.registerMarkdownCodeBlockProcessor('weekly-calendar', (source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext) => {
 			this.renderCalendar(el, ctx.sourcePath);
@@ -115,6 +117,7 @@ export default class WeeklyCalendarPlugin extends Plugin {
 		await this.app.vault.adapter.write(filePath, JSON.stringify(data, null, 2));
 	}
 
+
 	async addTodo(notePath: string, day: string, todo: string) {
 		const data = await this.loadData();
 		if (!data[notePath]) data[notePath] = {};
@@ -132,10 +135,21 @@ export default class WeeklyCalendarPlugin extends Plugin {
 	}
 
 	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+		try {
+			const content = await this.app.vault.adapter.read(this.settingsPath);
+			this.settings= JSON.parse(content);
+		} catch (error) {
+			this.settings=DEFAULT_SETTINGS;
+		}
+
 	}
+
 	async saveSettings() {
-		await this.saveData(this.settings);
+		if (!await this.app.vault.adapter.exists(this.pluginDirPath)) {
+			await this.app.vault.adapter.mkdir(this.pluginDirPath);
+		}
+
+		await this.app.vault.adapter.write(this.settingsPath, JSON.stringify(this.settings, null, 2));
 	}
 
 }
