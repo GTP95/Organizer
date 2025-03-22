@@ -7,10 +7,10 @@ interface WeeklyCalendarData {
 	};
 }
 
-interface ExamplePluginSettings {
+interface PluginSettings {
 	startOfWeek: 'Monday' | 'Sunday';
 }
-const DEFAULT_SETTINGS: ExamplePluginSettings = {
+const DEFAULT_SETTINGS: PluginSettings = {
 	startOfWeek: 'Monday'
 };
 
@@ -18,7 +18,7 @@ export default class WeeklyCalendarPlugin extends Plugin {
 	pluginDirPath: string;
 	dataPath: string;
 	settingsPath: string;
-	settings: ExamplePluginSettings;
+	settings: PluginSettings;
 
 	async onload() {
 		await this.loadSettings();
