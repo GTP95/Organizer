@@ -30,7 +30,8 @@ export class ExampleSettingTab extends PluginSettingTab {
 						if (activeView) {
 							const container = activeView.containerEl.querySelector('.weekly-calendar-wrapper');
 							if (container) {
-								this.plugin.renderCalendar(container, activeView.file.path);
+								// @ts-ignore activeView can't be null as it is checked above
+								this.plugin.renderCalendar(<HTMLElement>container, activeView.file.path);
 							}
 						}
 					})
