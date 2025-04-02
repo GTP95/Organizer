@@ -1,5 +1,5 @@
 import { Plugin, MarkdownPostProcessorContext } from 'obsidian';
-import {ExampleSettingTab} from "./SettingsTab";
+import {SettingTab} from "./SettingsTab";
 
 interface WeeklyCalendarData {
 	[notePath: string]: {
@@ -9,9 +9,11 @@ interface WeeklyCalendarData {
 
 interface PluginSettings {
 	startOfWeek: 'Monday' | 'Sunday';
+	language: string;
 }
 const DEFAULT_SETTINGS: PluginSettings = {
-	startOfWeek: 'Monday'
+	startOfWeek: 'Monday',
+	language: 'en'
 };
 
 export default class WeeklyCalendarPlugin extends Plugin {
@@ -22,7 +24,7 @@ export default class WeeklyCalendarPlugin extends Plugin {
 
 	async onload() {
 		await this.loadSettings();
-		this.pluginDirPath=`${this.app.vault.configDir}/plugins/weekly-calendar`;
+		this.pluginDirPath=`${this.app.vault.configDir}/plugins/organizer`;
 		this.dataPath = `${this.pluginDirPath}/data.json`;
 		this.settingsPath = `${this.pluginDirPath}/settings.json`;
 
@@ -38,7 +40,7 @@ export default class WeeklyCalendarPlugin extends Plugin {
 			}
 		});
 
-		this.addSettingTab(new ExampleSettingTab(this.app, this));
+		this.addSettingTab(new SettingTab(this.app, this));
 	}
 
 	async renderCalendar(container: HTMLElement, notePath: string) {
@@ -107,7 +109,7 @@ export default class WeeklyCalendarPlugin extends Plugin {
 	}
 
 	async saveData(data: WeeklyCalendarData) {
-		const dirPath = `${this.app.vault.configDir}/plugins/weekly-calendar`;
+		const dirPath = `${this.app.vault.configDir}/plugins/organizer`;
 		const filePath = `${dirPath}/data.json`;
 
 		if (!await this.app.vault.adapter.exists(dirPath)) {
