@@ -1,12 +1,15 @@
 import ExamplePlugin from './main';
-import { App, PluginSettingTab, Setting, MarkdownView } from 'obsidian';
+import {App, MarkdownView, PluginSettingTab, Setting} from 'obsidian';
+import * as path from 'path';
 
-export class ExampleSettingTab extends PluginSettingTab {
+
+export class SettingTab extends PluginSettingTab {
 	plugin: ExamplePlugin;
 
 	constructor(app: App, plugin: ExamplePlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
+		this.app = app;
 	}
 
 	display(): void {
@@ -36,5 +39,32 @@ export class ExampleSettingTab extends PluginSettingTab {
 						}
 					})
 			);
+
+		new Setting(containerEl)
+			.setName("Language")
+			.setDesc("Select the language")
+			.addDropdown(async (dropdown) => {
+				let locales = await this.getLocaleFiles( `${this.app.vault.configDir}/plugins/organizer/locales`);
+				locales.forEach(locale => {
+					dropdown.addOption(locale, locale);
+				});
+				dropdown.setValue(this.plugin.settings.language);
+				dropdown.onChange(async (value) => {
+					this.plugin.settings.language = value as string;
+					await this.plugin.saveSettings();
+				});
+			});
+	}
+
+	async getLocaleFiles(directory: string): Promise<string[]> {
+		try {
+			const listedFiles = await this.app.vault.adapter.list(directory);
+			return listedFiles.files
+				.filter(file => path.extname(file) === '.json')
+				.map(file => path.basename(file, '.json'));
+		} catch (err) {
+			console.error('Error reading locale files:', err);
+			return [];
+		}
 	}
 }
