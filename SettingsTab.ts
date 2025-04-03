@@ -1,6 +1,7 @@
 import ExamplePlugin from './main';
 import {App, MarkdownView, PluginSettingTab, Setting} from 'obsidian';
 import * as path from 'path';
+import i18n from "./i18n";
 
 
 export class SettingTab extends PluginSettingTab {
@@ -50,8 +51,17 @@ export class SettingTab extends PluginSettingTab {
 				});
 				dropdown.setValue(this.plugin.settings.language);
 				dropdown.onChange(async (value) => {
-					this.plugin.settings.language = value as string;
+					this.plugin.settings.language = value;
 					await this.plugin.saveSettings();
+					i18n.changeLanguage(value);
+					const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+					if (activeView) {
+						const container = activeView.containerEl.querySelector('.weekly-calendar-wrapper');
+						if (container) {
+							// @ts-ignore activeView can't be null as it is checked above
+							this.plugin.renderCalendar(<HTMLElement>container, activeView.file.path);
+						}
+					}
 				});
 			});
 	}
@@ -59,9 +69,8 @@ export class SettingTab extends PluginSettingTab {
 	async getLocaleFiles(directory: string): Promise<string[]> {
 		try {
 			const listedFiles = await this.app.vault.adapter.list(directory);
-			return listedFiles.files
-				.filter(file => path.extname(file) === '.json')
-				.map(file => path.basename(file, '.json'));
+			return listedFiles.folders
+				.map(folder => path.basename(folder));
 		} catch (err) {
 			console.error('Error reading locale files:', err);
 			return [];

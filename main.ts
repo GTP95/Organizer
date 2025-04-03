@@ -1,5 +1,6 @@
 import { Plugin, MarkdownPostProcessorContext } from 'obsidian';
 import {SettingTab} from "./SettingsTab";
+import i18next from './i18n';
 
 interface WeeklyCalendarData {
 	[notePath: string]: {
@@ -24,6 +25,8 @@ export default class WeeklyCalendarPlugin extends Plugin {
 
 	async onload() {
 		await this.loadSettings();
+		const lang = this.settings.language;
+		i18next.changeLanguage(lang);
 		this.pluginDirPath=`${this.app.vault.configDir}/plugins/organizer`;
 		this.dataPath = `${this.pluginDirPath}/data.json`;
 		this.settingsPath = `${this.pluginDirPath}/settings.json`;
@@ -49,8 +52,8 @@ export default class WeeklyCalendarPlugin extends Plugin {
 		const data = await this.loadData();
 		const startOfWeek = this.settings.startOfWeek;
 		const days = startOfWeek === 'Monday'
-			? ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-			: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+			? [i18next.t('common:monday'), i18next.t('common:tuesday'), i18next.t('common:wednesday'), i18next.t('common:thursday'), i18next.t('common:friday'), i18next.t('common:saturday'), i18next.t('common:sunday')]
+			: [i18next.t('common:sunday'), i18next.t('common:monday'), i18next.t('common:tuesday'), i18next.t('common:wednesday'), i18next.t('common:thursday'), i18next.t('common:friday'), i18next.t('common:saturday')];
 
 		const wrapper = container.createDiv({ cls: 'weekly-calendar-wrapper' });
 		const table = wrapper.createEl('table');
@@ -58,7 +61,7 @@ export default class WeeklyCalendarPlugin extends Plugin {
 
 		// Create header row
 		days.forEach(day => {
-			headerRow.createEl('th', { text: day.substring(0, 3) });
+			headerRow.createEl('th', { text: day });
 		});
 
 		// Create content row
