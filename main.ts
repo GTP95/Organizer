@@ -4,7 +4,7 @@ import i18next from './i18n';
 
 interface WeeklyCalendarData {
 	[notePath: string]: {
-		[day: string]: string[];
+		[day: string]: Task[];
 	};
 }
 
@@ -12,6 +12,11 @@ interface PluginSettings {
 	startOfWeek: 'Monday' | 'Sunday';
 	language: string;
 }
+
+class Task {
+	constructor(public text: string, public completed: boolean = false) {}
+}
+
 const DEFAULT_SETTINGS: PluginSettings = {
 	startOfWeek: 'Monday',
 	language: 'en'
@@ -47,8 +52,7 @@ export default class WeeklyCalendarPlugin extends Plugin {
 	}
 
 	async renderCalendar(container: HTMLElement, notePath: string) {
-		// Clear existing content before re-rendering
-		container.empty(); // This is the crucial line that prevents duplicate tables
+		container.empty();
 		const data = await this.loadData();
 		const startOfWeek = this.settings.startOfWeek;
 		const days = startOfWeek === 'Monday'
@@ -59,34 +63,32 @@ export default class WeeklyCalendarPlugin extends Plugin {
 		const table = wrapper.createEl('table');
 		const headerRow = table.createEl('tr');
 
-		// Create header row
 		days.forEach(day => {
 			headerRow.createEl('th', { text: day });
 		});
 
-		// Create content row
 		const contentRow = table.createEl('tr');
 		days.forEach(day => {
 			const td = contentRow.createEl('td', { cls: 'calendar-day' });
 
-			// Todo list
 			const list = td.createEl('ul');
 			if (data[notePath]?.[day]) {
 				data[notePath][day].forEach(todo => {
 					const li = list.createEl('li', { cls: 'calendar-item' });
 
-					// Delete button
-					const deleteBtn = li.createEl('button', { cls: 'calendar-delete', text: '✓' });
-					deleteBtn.onClickEvent(async () => {
-						await this.removeTodo(notePath, day, todo);
+					const strikeBtn = li.createEl('button', { cls: 'calendar-strike', text: '✓' });
+					strikeBtn.onClickEvent(async () => {
+						await this.markTodoCompleted(notePath, day, todo.text);
 						this.renderCalendar(container, notePath);
 					});
 
-					li.createSpan({ text: todo });
+					const todoText = li.createSpan({ text: todo.text });
+					if (todo.completed) {
+						todoText.style.textDecoration = 'line-through';
+					}
 				});
 			}
 
-			// Input field
 			const input = td.createEl('input', {
 				type: 'text',
 				cls: 'calendar-input',
@@ -123,19 +125,30 @@ export default class WeeklyCalendarPlugin extends Plugin {
 	}
 
 
-	async addTodo(notePath: string, day: string, todo: string) {
+	async addTodo(notePath: string, day: string, todoText: string) {
 		const data = await this.loadData();
 		if (!data[notePath]) data[notePath] = {};
 		if (!data[notePath][day]) data[notePath][day] = [];
-		data[notePath][day].push(todo);
+		data[notePath][day].push(new Task(todoText));
 		await this.saveData(data);
 	}
 
-	async removeTodo(notePath: string, day: string, todo: string) {
+	async removeTodo(notePath: string, day: string, todoText: string) {
 		const data = await this.loadData();
 		if (data[notePath]?.[day]) {
-			data[notePath][day] = data[notePath][day].filter(item => item !== todo);
+			data[notePath][day] = data[notePath][day].filter(item => item.text !== todoText);
 			await this.saveData(data);
+		}
+	}
+
+	async markTodoCompleted(notePath: string, day: string, todoText: string) {
+		const data = await this.loadData();
+		if (data[notePath]?.[day]) {
+			const todoItem = data[notePath][day].find(item => item.text === todoText);
+			if (todoItem) {
+				todoItem.completed = !todoItem.completed;
+				await this.saveData(data);
+			}
 		}
 	}
 
