@@ -5,5 +5,10 @@
 	"thursday": "Gio",
 	"friday": "Ven",
 	"saturday": "Sab",
-	"sunday": "Dom"
+	"sunday": "Dom",
+	"clear": "Rimuovi completati",
+	"start-of-week": "Inizio della settimana",
+	"start-week-select": "Seleziona il giorno di inizio della settimana",
+	"language": "Lingua",
+	"language-select": "Seleziona la lingua"
 }

@@ -1,0 +1,14 @@
+{
+	"monday": "Mo",
+	"tuesday": "Di",
+	"wednesday": "Mi",
+	"thursday": "Do",
+	"friday": "Fr",
+	"saturday": "Sa",
+	"sunday": "So",
+	"clear": "Abgeschlossene löschen",
+	"start-of-week": "Beginn der Woche",
+	"start-week-select": "Wählen Sie den Starttag der Woche",
+	"language": "Sprache",
+	"language-select": "Sprache auswählen"
+}

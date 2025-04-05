@@ -1,0 +1,14 @@
+{
+	"monday": "週一",
+	"tuesday": "週二",
+	"wednesday": "週三",
+	"thursday": "週四",
+	"friday": "週五",
+	"saturday": "週六",
+	"sunday": "週日",
+	"clear": "清除已完成",
+	"start-of-week": "一週的開始",
+	"start-week-select": "選擇每週的開始日",
+	"language": "語言",
+	"language-select": "選擇語言"
+}

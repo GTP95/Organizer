@@ -104,7 +104,7 @@ export default class WeeklyCalendarPlugin extends Plugin {
 		});
 
 		// Add Clear Completed button
-		const clearCompletedBtn = wrapper.createEl('button', { text: 'Clear Completed' });
+		const clearCompletedBtn = wrapper.createEl('button', { text: i18next.t('common:clear') });
 		clearCompletedBtn.onClickEvent(async () => {
 			await this.clearCompletedTasks(notePath);
 			this.renderCalendar(container, notePath);

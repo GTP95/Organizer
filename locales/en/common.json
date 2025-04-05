@@ -5,5 +5,10 @@
 	"thursday": "Thu",
 	"friday": "Fri",
 	"saturday": "Sat",
-	"sunday": "Sun"
+	"sunday": "Sun",
+	"clear": "Clear completed",
+	"start-of-week": "Start of the week",
+	"start-week-select": "Select the starting day of the week",
+	"language": "Language",
+	"language-select": "Select the language"
 }
