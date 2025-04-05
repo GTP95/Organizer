@@ -102,6 +102,13 @@ export default class WeeklyCalendarPlugin extends Plugin {
 				}
 			});
 		});
+
+		// Add Clear Completed button
+		const clearCompletedBtn = wrapper.createEl('button', { text: 'Clear Completed' });
+		clearCompletedBtn.onClickEvent(async () => {
+			await this.clearCompletedTasks(notePath);
+			this.renderCalendar(container, notePath);
+		});
 	}
 
 	async loadData(): Promise<WeeklyCalendarData> {
@@ -149,6 +156,16 @@ export default class WeeklyCalendarPlugin extends Plugin {
 				todoItem.completed = !todoItem.completed;
 				await this.saveData(data);
 			}
+		}
+	}
+
+	async clearCompletedTasks(notePath: string) {
+		const data = await this.loadData();
+		if (data[notePath]) {
+			for (const day in data[notePath]) {
+				data[notePath][day] = data[notePath][day].filter(task => !task.completed);
+			}
+			await this.saveData(data);
 		}
 	}
 
